@@ -1,0 +1,37 @@
+{
+  "name": "socks-handler",
+  "description": "A SOCKS4a/SOCKS5 server implementation.",
+  "author": "Alexandre Kirszenberg <a.kirszenberg@gmail.com>",
+  "version": "0.0.1",
+  "keywords": [
+    "socks",
+    "socks5",
+    "socks4",
+    "server",
+    "stream"
+  ],
+
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:morhaus/socks-handler.git"
+  },
+
+  "main": "./lib/index.js",
+
+  "scripts": {
+    "pre-publish": "grunt"
+  },
+
+  "dependencies": {
+    "ip": "0.1.0",
+    "through": "2.3.4"
+  },
+
+  "devDependencies": {
+    "grunt": "*",
+    "grunt-cli": "*",
+    "grunt-contrib-watch": "*",
+    "grunt-contrib-coffee": "*",
+    "grunt-contrib-clean": "*"
+  }
+}
