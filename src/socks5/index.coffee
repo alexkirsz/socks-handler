@@ -29,6 +29,8 @@ exports.createHandler = ->
       when 'authentication' then authentication.call @, chunk
       when 'request' then request.call @, chunk
 
+  handler.version = VERSION
+
   handler.set = (name, value) ->
     methods[name] = value
     return handler
@@ -40,6 +42,7 @@ exports.createHandler = ->
       handshake = parsers.handshake data
     catch e
       @emit 'error', e
+      return
 
     methods.handshake handshake, (method) =>
       @push new Buffer [VERSION, method]
@@ -57,6 +60,7 @@ exports.createHandler = ->
       auth = parsers.auth data, authMethod
     catch e
       @emit 'error', e
+      return
 
     methods.auth auth, (status) =>
       @push new Buffer [VERSION, status]
@@ -71,6 +75,7 @@ exports.createHandler = ->
       request = parsers.request data
     catch e
       @emit 'error', e
+      return
 
     methods.request request, (status, localPort, localAddress) =>
       if localPort

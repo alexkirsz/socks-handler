@@ -14,13 +14,14 @@ exports.handle = (stream, callback) ->
 
     stream.pipe(handler).pipe(stream)
 
-    # Write the first chunk.
-    handler.write chunk
-
     handler.on 'success', ->
       stream.unpipe(handler).unpipe(stream)
 
+    # Let the user define handler behavior.
     callback null, handler
+
+    # Write the first chunk.
+    handler.write chunk
 
 exports[4] = socks4
 exports[5] = socks5

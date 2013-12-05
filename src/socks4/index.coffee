@@ -15,6 +15,8 @@ exports.createHandler = ->
     switch step
       when 'request' then request.call @, chunk
 
+  handler.version = VERSION
+
   handler.set = (name, value) ->
     methods[name] = value
     return handler
@@ -26,13 +28,14 @@ exports.createHandler = ->
       request = parsers.request data
     catch e
       @emit 'error', e
+      return
 
     methods.request request, (status) =>
       @push new Buffer [
         RSV
         status
-        request.portBuffer... # Should be ignored anyway
-        request.hostBuffer... # Should be ignored anyway
+        request.portBuffer...
+        request.hostBuffer...
       ]
 
       if status isnt REQUEST_STATUS.GRANTED
