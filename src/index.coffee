@@ -5,9 +5,9 @@ exports.handle = (stream, callback) ->
   stream.once 'data', (chunk) ->
     switch version = chunk[0]
       when socks4.VERSION
-        handler = socks4.createHandler handlers
+        handler = socks4.createHandler()
       when socks5.VERSION
-        handler = socks5.createHandler handlers
+        handler = socks5.createHandler()
       else
         callback? new Error "Unsupported SOCKS version: #{version}"
         return
