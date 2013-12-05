@@ -2,22 +2,38 @@ net = require 'net'
 ip = require 'ip'
 through = require 'through'
 parsers = require './parsers'
-defaults = require './defaults'
 { VERSION, AUTH_METHOD, COMMAND, AUTH_STATUS, ADDRTYPE, REQUEST_STATUS, RSV } = require './const'
 
-exports.createHandler = (_handlers) ->
+defaults =
+  handshake: ({ methods }, callback) ->
+    if AUTH_METHOD.NOAUTH in methods
+      callback AUTH_METHOD.NOAUTH
+    else
+      callback AUTH_METHOD.NO_ACCEPTABLE_METHOD
+
+  auth: (infos, callback) ->
+    callback AUTH_STATUS.FAILURE
+
+  request: (infos, callback) ->
+    callback REQUEST_STATUS.SERVER_FAILURE
+
+exports.createHandler = ->
   step = 'handshake'
   authMethod = -1
 
-  handlers = {}
-  handlers[name] = value for name, value of defaults
-  handlers[name] = value for name, value of _handlers
+  methods = {}
 
-  onwrite = (chunk) ->
+  handler = through (chunk) ->
     switch step
       when 'handshake' then handshake.call @, chunk
       when 'authentication' then authentication.call @, chunk
       when 'request' then request.call @, chunk
+
+  handler.set = (name, value) ->
+    methods[name] = value
+    return handler
+
+  handler.set name, value for name, value of defaults
 
   handshake = (data) ->
     try
@@ -25,7 +41,7 @@ exports.createHandler = (_handlers) ->
     catch e
       @emit 'error', e
 
-    handlers.handshake handshake, (method) =>
+    methods.handshake handshake, (method) =>
       @push new Buffer [VERSION, method]
 
       if method is AUTH_METHOD.NO_ACCEPTABLE_METHOD
@@ -42,7 +58,7 @@ exports.createHandler = (_handlers) ->
     catch e
       @emit 'error', e
 
-    handlers.auth auth, (status) =>
+    methods.auth auth, (status) =>
       @push new Buffer [VERSION, status]
 
       if status isnt AUTH_STATUS.SUCCESS
@@ -56,7 +72,7 @@ exports.createHandler = (_handlers) ->
     catch e
       @emit 'error', e
 
-    handlers.request request, (status, localPort, localAddress) =>
+    methods.request request, (status, localPort, localAddress) =>
       if localPort
         portBuffer = new Buffer 2
         portBuffer.writeUInt16BE localPort, 0
@@ -91,6 +107,6 @@ exports.createHandler = (_handlers) ->
         step = 'ignore'
         @emit 'success'
 
-  through onwrite
+  return handler
 
 exports[name] = value for name, value of (require './const')

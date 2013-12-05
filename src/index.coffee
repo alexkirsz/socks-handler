@@ -1,7 +1,7 @@
 socks4 = require './socks4'
 socks5 = require './socks5'
 
-exports.handle = (stream, handlers, callback) ->
+exports.handle = (stream, callback) ->
   stream.once 'data', (chunk) ->
     switch version = chunk[0]
       when socks4.VERSION
@@ -20,8 +20,7 @@ exports.handle = (stream, handlers, callback) ->
     handler.on 'success', ->
       stream.unpipe(handler).unpipe(stream)
 
-    handler.on 'error', (err) ->
-      callback? err
+    callback null, handler
 
 exports[4] = socks4
 exports[5] = socks5
