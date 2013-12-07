@@ -4,7 +4,7 @@ through = require 'through'
 parsers = require './parsers'
 { VERSION, AUTH_METHOD, COMMAND, AUTH_STATUS, ADDRTYPE, REQUEST_STATUS, RSV } = require './const'
 
-defaults =
+events =
   handshake: ({ methods }, callback) ->
     if AUTH_METHOD.NOAUTH in methods
       callback AUTH_METHOD.NOAUTH
@@ -21,21 +21,19 @@ exports.createHandler = ->
   step = 'handshake'
   authMethod = -1
 
-  methods = {}
-
   handler = through (chunk) ->
     switch step
       when 'handshake' then handshake.call @, chunk
       when 'authentication' then authentication.call @, chunk
       when 'request' then request.call @, chunk
-
+  
   handler.version = VERSION
 
-  handler.set = (name, value) ->
-    methods[name] = value
-    return handler
+  handler.on name, value for name, value of events
 
-  handler.set name, value for name, value of defaults
+  handler.on 'newListener', (event, listener) ->
+    if event of events and events[event] in (handler.listeners event)
+      handler.removeListener event, events[event]
 
   handshake = (data) ->
     try
@@ -44,7 +42,7 @@ exports.createHandler = ->
       @emit 'error', e
       return
 
-    methods.handshake handshake, (method) =>
+    @emit 'handshake', handshake, (method) =>
       @push new Buffer [VERSION, method]
 
       if method is AUTH_METHOD.NO_ACCEPTABLE_METHOD
@@ -62,7 +60,7 @@ exports.createHandler = ->
       @emit 'error', e
       return
 
-    methods.auth auth, (status) =>
+    @emit 'auth', auth, (status) =>
       @push new Buffer [VERSION, status]
 
       if status isnt AUTH_STATUS.SUCCESS
@@ -77,12 +75,12 @@ exports.createHandler = ->
       @emit 'error', e
       return
 
-    methods.request request, (status, localPort, localAddress) =>
+    @emit 'request', request, (status, localPort, localAddress) =>
       if localPort
         portBuffer = new Buffer 2
         portBuffer.writeUInt16BE localPort, 0
       else
-        { portBuffer } = request
+        portBuffer = new Buffer [0, 0]
 
       if localAddress
         if net.isIPv4 localAddress
@@ -91,19 +89,17 @@ exports.createHandler = ->
         else if net.isIPv6 localAddress
           addrType = ADDRTYPE.IPV6
           hostBuffer = ip.toBuffer localAddress
-        else
-          addrType = ADDRTYPE.DOMAIN
-          hostBuffer = new Buffer localAddress
       else
-        { addrType, hostBuffer } = request
+        addrType = ADDRTYPE.IPV4
+        hostBuffer = new Buffer [0, 0, 0, 0]
 
       @push new Buffer [
         VERSION
         status
         RSV
-        ADDRTYPE.IPV4
-        [0, 0, 0, 0]...
-        [0, 0]...
+        addrType
+        hostBuffer...
+        portBuffer...
       ]
 
       if status isnt REQUEST_STATUS.SUCCESS

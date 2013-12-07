@@ -13,7 +13,7 @@ server = net.createServer (clientConnection) ->
     handler.on 'error', (err) ->
       console.log 'handler', err
 
-    handler.set 'request', ({ version, command, host, port }, callback) ->
+    handler.on 'request', ({ version, command, host, port }, callback) ->
       if command isnt socks[5].COMMAND.CONNECT
         if version is 5
           callback socks[5].REQUEST_STATUS.COMMAND_NOT_SUPPORTED

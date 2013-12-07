@@ -2,14 +2,12 @@ through = require 'through'
 parsers = require './parsers'
 { VERSION, COMMAND, REQUEST_STATUS, RSV } = require './const'
 
-defaults =
+events =
   request: (infos, callback) ->
     callback REQUEST_STATUS.FAILED
 
 exports.createHandler = ->
   step = 'request'
-
-  methods = {}
 
   handler = through (chunk) ->
     switch step
@@ -17,11 +15,11 @@ exports.createHandler = ->
 
   handler.version = VERSION
 
-  handler.set = (name, value) ->
-    methods[name] = value
-    return handler
+  handler.on name, value for name, value of events
 
-  handler.set name, value for name, value of defaults
+  handler.on 'newListener', (event, listener) ->
+    if event of events and events[event] in (handler.listeners event)
+      handler.removeListener event, events[event]
 
   request = (data) ->
     try
@@ -30,7 +28,7 @@ exports.createHandler = ->
       @emit 'error', e
       return
 
-    methods.request request, (status) =>
+    @emit 'request', request, (status) =>
       @push new Buffer [
         RSV
         status
