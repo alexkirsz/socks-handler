@@ -15,8 +15,8 @@ exports.handshake = (data) ->
 
   methods = Array::slice.call data[2...2 + nmethods]
 
-  for method in methods when method not in [AUTH_METHOD.NOAUTH, AUTH_METHOD.USERNAME_PASSWORD]
-    throw new Error "Unsupported authentication method: #{method}"
+  if AUTH_METHOD.NOAUTH not in methods and AUTH_METHOD.USERNAME_PASSWORD not in methods
+    throw new Error "Unsupported authentication methods: #{methods}"
 
   return { version, methods }
 
