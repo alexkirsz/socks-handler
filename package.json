@@ -2,7 +2,7 @@
   "name": "socks-handler",
   "description": "A SOCKS4a/SOCKS5 server implementation.",
   "author": "Alexandre Kirszenberg <a.kirszenberg@gmail.com>",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "keywords": [
     "socks",
     "socks5",
